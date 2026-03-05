@@ -7,7 +7,7 @@ import { getUpcomingFacts, getRecentlyPassedFacts, storeTemporalHint } from "./t
 import { getActiveChapters } from "./chapters.js";
 
 const client = new Anthropic();
-const JUDES_IDENTITY = readFileSync("./judes-identity.md", "utf8");
+const JUDES_IDENTITY = readFileSync("./docs/IDENTITY.md", "utf8");
 
 async function getUserContext(userId, lastUserMessage) {
   const user = await sql`SELECT * FROM users WHERE id = ${userId}`;
