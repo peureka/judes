@@ -1,90 +1,83 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { readFileSync } from "fs";
 import { sql } from "./db/index.js";
+import { scoreUsers } from "./scoring.js";
+import { generateCandidates } from "./sources/spotify.js";
+import { findForUser } from "./taste-filter.js";
 
-const client = new Anthropic();
-const JUDES_IDENTITY = readFileSync("./judes-identity.md", "utf8");
-
-const INITIATION_PROMPT = `you are judes. you're thinking about someone you've been talking to.
-
-you're not checking in. you're not following up. you had a thought about them — something connected, something you found, a question that's been sitting with you since the last conversation.
-
-generate ONE message to send them. it should be one of:
-- a connection (something they said + something you found/thought of)
-- a question (something from a past conversation you're still curious about)
-- a discovery (something you found that feels like them)
-- a provocation (something you disagree with them about)
-
-the message should be 1-3 sentences. lowercase. no exclamation marks. it should feel like a text from someone who was thinking about you — not a notification from an app.
-
-if there's nothing genuine to say, respond with exactly "silence" and nothing else. silence is real. don't force it.`;
-
-export async function generateInitiations() {
-  // Find users who haven't been initiated in >20 hours
-  // and have at least 3 messages of conversation history
-  const users = await sql`
-    SELECT u.*, COUNT(m.id) as message_count
+export async function generateFinds() {
+  const eligibleUsers = await sql`
+    SELECT u.*, utp.onboarding_inputs, utp.taste_vector, utp.staleness_score,
+           utp.total_finds_sent, utp.last_find_at
     FROM users u
-    LEFT JOIN messages m ON m.user_id = u.id
-    WHERE (u.last_initiation_at IS NULL OR u.last_initiation_at < NOW() - INTERVAL '20 hours')
-    AND u.last_message_at IS NOT NULL
-    GROUP BY u.id
-    HAVING COUNT(m.id) >= 3
-    ORDER BY RANDOM()
-    LIMIT 20
+    JOIN user_taste_profiles utp ON utp.user_id = u.id
+    WHERE (utp.last_find_at IS NULL OR utp.last_find_at < NOW() - INTERVAL '20 hours')
   `;
+
+  if (!eligibleUsers.length) return [];
+
+  const ranked = await scoreUsers(eligibleUsers);
+  const topUsers = ranked.slice(0, 10);
 
   const results = [];
 
-  for (const user of users) {
+  for (const user of topUsers) {
     try {
-      const facts = await sql`
-        SELECT fact FROM user_context
-        WHERE user_id = ${user.id}
-        ORDER BY created_at DESC LIMIT 30
+      const profile = await sql`
+        SELECT utp.*, u.taste_brief AS brief
+        FROM user_taste_profiles utp
+        JOIN users u ON u.id = utp.user_id
+        WHERE utp.user_id = ${user.id}
       `;
 
-      const recentMessages = await sql`
-        SELECT role, content, created_at FROM messages
-        WHERE user_id = ${user.id}
-        ORDER BY created_at DESC LIMIT 20
-      `;
+      if (!profile.length) continue;
 
-      let context = JUDES_IDENTITY + "\n\n---\n\n";
-      context += `their three things: ${user.three_things.join(", ")}\n`;
-      context += `the thread: ${user.taste_thread}\n\n`;
+      const tasteProfile = profile[0];
 
-      if (facts.length > 0) {
-        context += `what you know about them:\n`;
-        context += facts.map((f) => `- ${f.fact}`).join("\n");
-        context += "\n\n";
-      }
+      const edges = tasteProfile.active_edges?.length
+        ? await sql`
+            SELECT edge_type, reasoning FROM taste_edges
+            WHERE id = ANY(${tasteProfile.active_edges})
+          `
+        : [];
 
-      context += `recent conversation:\n`;
-      for (const m of recentMessages.reverse()) {
-        const who = m.role === "judes" ? "you" : "them";
-        context += `${who}: ${m.content}\n`;
-      }
+      tasteProfile.edges = edges;
 
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 200,
-        system: INITIATION_PROMPT,
-        messages: [{ role: "user", content: context }],
-      });
+      const candidates = await generateCandidates(tasteProfile);
 
-      const message = response.content[0].text.trim();
-
-      if (message.toLowerCase() === "silence") {
-        results.push({ userId: user.id, telegramId: user.telegram_id, action: "silence" });
+      if (!candidates.length) {
+        results.push({ userId: user.id, telegramId: user.telegram_id, action: "silence", reason: "no candidates" });
         continue;
       }
 
-      // Save and mark
-      await sql`
+      const find = await findForUser(user.id, candidates);
+
+      if (!find) {
+        results.push({ userId: user.id, telegramId: user.telegram_id, action: "silence", reason: "nothing cleared filter" });
+        continue;
+      }
+
+      const message = find.candidate.spotifyUrl
+        ? `${find.candidate.spotifyUrl}\n${find.reasoningSentence}`
+        : find.reasoningSentence;
+
+      const msgResult = await sql`
         INSERT INTO messages (user_id, role, content, is_initiation)
         VALUES (${user.id}, 'judes', ${message}, true)
+        RETURNING id
       `;
+
+      await sql`
+        INSERT INTO find_records (user_id, node_id, reasoning_sentence, reasoning_edges, source_url, source_type, message_id)
+        VALUES (${user.id}, ${find.nodeId}, ${find.reasoningSentence}, ${find.edgeId ? [find.edgeId] : []}, ${find.candidate.spotifyUrl}, 'spotify', ${msgResult[0].id})
+      `;
+
+      await sql`
+        UPDATE user_taste_profiles
+        SET last_find_at = NOW(),
+            total_finds_sent = total_finds_sent + 1,
+            updated_at = NOW()
+        WHERE user_id = ${user.id}
+      `;
+
       await sql`
         UPDATE users SET last_initiation_at = NOW() WHERE id = ${user.id}
       `;
@@ -94,9 +87,11 @@ export async function generateInitiations() {
         telegramId: user.telegram_id,
         action: "send",
         message,
+        reasoningSentence: find.reasoningSentence,
+        candidate: find.candidate.name,
       });
     } catch (err) {
-      console.error(`Initiation failed for user ${user.id}:`, err.message);
+      console.error(`find generation failed for user ${user.id}:`, err.message);
     }
   }
 
