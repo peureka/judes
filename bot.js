@@ -1,7 +1,9 @@
 import { Bot } from "grammy";
 import { sql } from "./db/index.js";
-import { decode } from "./decode.js";
-import { respond } from "./conversation.js";
+import { decode, extractTasteGraph } from "./decode.js";
+import { respondToReaction, extractFacts } from "./conversation.js";
+import { classifyReaction } from "./reaction.js";
+import { handlePhoto, handleVoice } from "./media.js";
 import "dotenv/config";
 
 const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
@@ -29,6 +31,18 @@ bot.command("start", async (ctx) => {
   );
 });
 
+bot.on("message:photo", async (ctx) => {
+  const telegramId = ctx.from.id;
+  if (onboardingState.has(telegramId)) return;
+  // Photos are noted but Judes doesn't reply to random photos
+});
+
+bot.on("message:voice", async (ctx) => {
+  const telegramId = ctx.from.id;
+  if (onboardingState.has(telegramId)) return;
+  // Voice messages are noted but Judes doesn't reply to random voice messages
+});
+
 bot.on("message:text", async (ctx) => {
   const telegramId = ctx.from.id;
   const text = ctx.message.text;
@@ -54,30 +68,39 @@ bot.on("message:text", async (ctx) => {
     await ctx.replyWithChatAction("typing");
 
     // Decode
-    const decodeResult = await decode(threeThings);
+    const { decode: decodeText, world, brief, raw } = await decode(threeThings);
 
     // Extract thread (first sentence of decode)
-    const thread = decodeResult.split(".")[0] + ".";
+    const thread = decodeText.split(".")[0] + ".";
 
     // Create user
     const user = await sql`
-      INSERT INTO users (telegram_id, username, first_name, three_things, taste_decode, taste_thread)
-      VALUES (${telegramId}, ${ctx.from.username}, ${ctx.from.first_name}, ${threeThings}, ${decodeResult}, ${thread})
+      INSERT INTO users (telegram_id, username, first_name, three_things, taste_decode, taste_thread, taste_brief)
+      VALUES (${telegramId}, ${ctx.from.username}, ${ctx.from.first_name}, ${threeThings}, ${decodeText}, ${thread}, ${brief})
       RETURNING id
     `;
 
-    // Save decode as first Judes message
+    // Build the message Judes sends — decode + world
+    let replyText = decodeText;
+    if (world) replyText += "\n\n" + world;
+
+    // Save full output as first Judes message
     await sql`
       INSERT INTO messages (user_id, role, content)
-      VALUES (${user[0].id}, 'judes', ${decodeResult})
+      VALUES (${user[0].id}, 'judes', ${replyText})
     `;
 
+    // Extract taste graph (async, non-blocking)
+    extractTasteGraph(threeThings, decodeText, user[0].id).catch((err) => {
+      console.error("taste graph extraction failed:", err.message);
+    });
+
     onboardingState.delete(telegramId);
-    await ctx.reply(decodeResult);
+    await ctx.reply(replyText);
     return;
   }
 
-  // Regular conversation
+  // Post-onboarding: reaction capture only
   const user = await sql`
     SELECT id FROM users WHERE telegram_id = ${telegramId}
   `;
@@ -90,11 +113,43 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  await ctx.replyWithChatAction("typing");
-  const response = await respond(user[0].id, text);
+  // Check if this is a response to a recent find
+  const recentFind = await sql`
+    SELECT fr.id, fr.reasoning_sentence, fr.source_url
+    FROM find_records fr
+    WHERE fr.user_id = ${user[0].id}
+      AND fr.response_at IS NULL
+      AND fr.sent_at > NOW() - INTERVAL '7 days'
+    ORDER BY fr.sent_at DESC LIMIT 1
+  `;
 
-  if (response) {
-    await ctx.reply(response);
+  if (recentFind.length) {
+    await ctx.replyWithChatAction("typing");
+
+    const reaction = await classifyReaction(recentFind[0].id, user[0].id, text);
+
+    // Extract facts silently (existing engine)
+    extractFacts(user[0].id, text).catch(() => {});
+
+    // Generate one reply, then go quiet
+    const reply = await respondToReaction(user[0].id, text, recentFind[0], reaction);
+    if (reply) {
+      await sql`
+        INSERT INTO messages (user_id, role, content)
+        VALUES (${user[0].id}, 'judes', ${reply})
+      `;
+      await ctx.reply(reply);
+    }
+  } else {
+    // Not responding to a find. Save message, extract facts, stay quiet.
+    await sql`
+      INSERT INTO messages (user_id, role, content)
+      VALUES (${user[0].id}, 'user', ${text})
+    `;
+    await sql`
+      UPDATE users SET last_message_at = NOW() WHERE id = ${user[0].id}
+    `;
+    extractFacts(user[0].id, text).catch(() => {});
   }
 });
 
