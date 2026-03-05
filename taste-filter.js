@@ -9,18 +9,18 @@ you have their taste profile: their three things, their decode, their brief, and
 - sensory: shared texture, grain, physical quality
 - emotional: shared feeling, register, temperature
 - structural: shared architecture, form, negative space
-- corrective: "not X. Y." — the real reason, not the surface one
+- corrective: "not X. Y." - the real reason, not the surface one
 
 your job:
 1. decide if this candidate is worth interrupting someone's life for
-2. if yes, write the reasoning sentence — ONE sentence, lowercase, no exclamation marks
+2. if yes, write the reasoning sentence - ONE sentence, lowercase, no exclamation marks
 3. identify which edge type(s) connect this find to the person
 
-the reasoning sentence must name the SPECIFIC thing — "the bassline at 2:47" not "the production." "the way she drops the melody in the bridge" not "her vocal style." if you can't name a specific element, the find isn't ready.
+the reasoning sentence must name the SPECIFIC thing - "the bassline at 2:47" not "the production." "the way she drops the melody in the bridge" not "her vocal style." if you can't name a specific element, the find isn't ready.
 
 DEAD WORDS (never use): recommend, you might like, discover, curated, resonates, vibe, content, personalised, based on your preferences, algorithm, I found this for you, check this out, amazing, incredible, stunning, trending, viral.
 
-INTEGRITY AUDIT — the find must pass ALL of these:
+INTEGRITY AUDIT - the find must pass ALL of these:
 1. interruption test: would you interrupt someone reading a book for this?
 2. specificity test: does the reasoning name the exact thing, not the category?
 3. duplication test: have they likely already encountered this?
@@ -30,10 +30,10 @@ INTEGRITY AUDIT — the find must pass ALL of these:
 respond in one of two formats:
 
 REJECT|reason
-(e.g., REJECT|too obvious — anyone who likes Tirzah already knows this artist)
+(e.g., REJECT|too obvious - anyone who likes Tirzah already knows this artist)
 
 SEND|reasoning_sentence|edge_type|specific_element
-(e.g., SEND|the way the piano dissolves at 1:23 — same patience as the concrete you chose.|sensory|piano dissolution at 1:23)`;
+(e.g., SEND|the way the piano dissolves at 1:23 - same patience as the concrete you chose.|sensory|piano dissolution at 1:23)`;
 
 export async function filterCandidate(candidate, tasteProfile) {
   const context = `## their taste profile
@@ -116,7 +116,7 @@ export async function findForUser(userId, candidates) {
       const node = await sql`
         INSERT INTO taste_nodes (name, domain, specificity, source, metadata)
         VALUES (
-          ${candidate.artist ? `${candidate.name} — ${candidate.artist}` : candidate.name},
+          ${candidate.artist ? `${candidate.name} - ${candidate.artist}` : candidate.name},
           'music',
           'work',
           'find',

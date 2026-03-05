@@ -3,7 +3,7 @@ import { sql } from "./db/index.js";
 
 const client = new Anthropic();
 
-const CLASSIFY_PROMPT = `classify this response to a find. the find was a song/film/place sent with a reasoning sentence. the user replied (or didn't — silence is tracked by time).
+const CLASSIFY_PROMPT = `classify this response to a find. the find was a song/film/place sent with a reasoning sentence. the user replied (or didn't - silence is tracked by time).
 
 response types:
 - confirmation: short affirmation ("yes", "this", "exactly", thumbs up)
@@ -13,7 +13,7 @@ response types:
 - social_share: forwarded or shared with others
 
 respond with: type|any_new_taste_insight
-(the taste insight is optional — only include if the response reveals something new about their taste, one sentence, lowercase)
+(the taste insight is optional - only include if the response reveals something new about their taste, one sentence, lowercase)
 
 example: deep_resonance|they respond to unresolved tension in music, not resolution`;
 

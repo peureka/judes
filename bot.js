@@ -27,7 +27,7 @@ bot.command("start", async (ctx) => {
   // Start onboarding
   onboardingState.set(telegramId, { step: "waiting_for_three" });
   await ctx.reply(
-    "hey. three things. anything — a film, a city, a texture, a person. whatever comes first."
+    "hey. three things. anything - a film, a city, a texture, a person. whatever comes first."
   );
 });
 
@@ -68,7 +68,12 @@ bot.on("message:text", async (ctx) => {
     await ctx.replyWithChatAction("typing");
 
     // Decode
-    const { decode: decodeText, world, brief, raw } = await decode(threeThings);
+    let { decode: decodeText, world, brief, raw } = await decode(threeThings);
+
+    // Strip em dashes from all output
+    decodeText = decodeText.replace(/—/g, "-");
+    if (world) world = world.replace(/—/g, "-");
+    if (brief) brief = brief.replace(/—/g, "-");
 
     // Extract thread (first sentence of decode)
     const thread = decodeText.split(".")[0] + ".";
@@ -80,11 +85,26 @@ bot.on("message:text", async (ctx) => {
       RETURNING id
     `;
 
-    // Build the message Judes sends — decode + world
+    // Build the message Judes sends - decode + world
     let replyText = decodeText;
-    if (world) replyText += "\n\n" + world;
 
-    // Save full output as first Judes message
+    // Linkify world items: "Domain - Name" → "Domain - <a href='google search'>Name</a>"
+    let worldHtml = "";
+    if (world) {
+      worldHtml = world
+        .split("\n")
+        .map((line) => {
+          const match = line.match(/^(.+?)\s*-\s*(.+)$/);
+          if (!match) return line;
+          const [, domain, name] = match;
+          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(name.trim() + " " + domain.trim())}`;
+          return `${domain} - <a href="${searchUrl}">${name.trim()}</a>`;
+        })
+        .join("\n");
+      replyText += "\n\n" + world;
+    }
+
+    // Save full output as first Judes message (plain text for DB)
     await sql`
       INSERT INTO messages (user_id, role, content)
       VALUES (${user[0].id}, 'judes', ${replyText})
@@ -96,7 +116,9 @@ bot.on("message:text", async (ctx) => {
     });
 
     onboardingState.delete(telegramId);
-    await ctx.reply(replyText);
+    // Send with HTML parse mode for clickable links
+    const htmlReply = worldHtml ? decodeText + "\n\n" + worldHtml : decodeText;
+    await ctx.reply(htmlReply, { parse_mode: "HTML" });
     return;
   }
 
@@ -107,7 +129,7 @@ bot.on("message:text", async (ctx) => {
 
   if (!user.length) {
     await ctx.reply(
-      "hey. three things. anything — a film, a city, a texture, a person. whatever comes first."
+      "hey. three things. anything - a film, a city, a texture, a person. whatever comes first."
     );
     onboardingState.set(telegramId, { step: "waiting_for_three" });
     return;

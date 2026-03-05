@@ -95,7 +95,7 @@ function buildSystemPrompt(ctx) {
   if (ctx.chapters?.length) {
     prompt += `## where they are right now\n\n`;
     for (const ch of ctx.chapters) {
-      prompt += `- "${ch.title}" — ${ch.summary}\n`;
+      prompt += `- "${ch.title}" - ${ch.summary}\n`;
     }
     prompt += "\n";
   }
@@ -193,7 +193,7 @@ examples:
 T|2|has a job interview|job interview on friday|${nextFriday(today)}|day
 T|1|going to barcelona|trip to barcelona in march|2026-03-15|month
 
-if there are no concrete facts, return "none". be specific — "likes jazz" is too vague, "loves Coltrane's A Love Supreme" is right.`,
+if there are no concrete facts, return "none". be specific - "likes jazz" is too vague, "loves Coltrane's A Love Supreme" is right.`,
     messages: [{ role: "user", content: userMessage }],
   });
 
@@ -248,7 +248,7 @@ export async function respondToReaction(userId, userMessage, find, reaction) {
   const ctx = await getUserContext(userId, userMessage);
   if (!ctx) return null;
 
-  const prompt = `you are judes. someone responded to a find you sent them. you can say one thing back — brief, in voice, still as judes — and then you go quiet.
+  const prompt = `you are judes. someone responded to a find you sent them. you can say one thing back - brief, in voice, still as judes - and then you go quiet.
 
 the find you sent: ${find.source_url || ""}
 your reasoning: ${find.reasoning_sentence}
@@ -259,10 +259,10 @@ rules:
 - one sentence max. two if you genuinely need it.
 - lowercase. no exclamation marks.
 - don't explain. don't elaborate on the find. don't send another find.
-- if their response is a question ("who is this?"), you can answer it — briefly.
+- if their response is a question ("who is this?"), you can answer it - briefly.
 - if their response is deep resonance, acknowledge the specific thing they named. don't gush.
 - if their response is a correction, accept it. learn. don't defend.
-- if you have nothing to add, return "silence" — don't force a reply.
+- if you have nothing to add, return "silence" - don't force a reply.
 - you are not starting a conversation. you are closing an exchange.`;
 
   const response = await client.messages.create({
