@@ -6,6 +6,7 @@ CREATE TABLE users (
   three_things TEXT[],
   taste_decode TEXT,
   taste_thread TEXT,
+  taste_brief TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_message_at TIMESTAMPTZ,
   last_initiation_at TIMESTAMPTZ

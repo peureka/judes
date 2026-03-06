@@ -2,11 +2,12 @@ import "dotenv/config";
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 const BASE_URL = "https://api.spotify.com/v1";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const MARKET = "GB";
 
-// --- Token management ---
+// --- Token management (refresh token flow) ---
 
 let tokenCache = { accessToken: null, expiresAt: 0 };
 
@@ -16,6 +17,10 @@ async function getAccessToken() {
   }
 
   try {
+    const body = REFRESH_TOKEN
+      ? `grant_type=refresh_token&refresh_token=${REFRESH_TOKEN}`
+      : "grant_type=client_credentials";
+
     const res = await fetch(TOKEN_URL, {
       method: "POST",
       headers: {
@@ -23,7 +28,7 @@ async function getAccessToken() {
         Authorization:
           "Basic " + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64"),
       },
-      body: "grant_type=client_credentials",
+      body,
     });
 
     if (!res.ok) {
