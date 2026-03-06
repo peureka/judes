@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #111111;
+  --fg: #e0e0e0;
+  --fg-dim: #666666;
+  --accent: #ffffff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--fg-dim);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-color: var(--fg);
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+}
