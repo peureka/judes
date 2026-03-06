@@ -1,13 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { sql } from "./db/index.js";
 import { recall, recallFallback } from "./memory/recall.js";
 import { embed, toVector } from "./memory/embeddings.js";
 import { getUpcomingFacts, getRecentlyPassedFacts, storeTemporalHint } from "./temporal.js";
 import { getActiveChapters } from "./chapters.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const client = new Anthropic();
-const JUDES_IDENTITY = readFileSync("./docs/IDENTITY.md", "utf8");
+const JUDES_IDENTITY = readFileSync(join(__dirname, "docs/IDENTITY.md"), "utf8");
 
 async function getUserContext(userId, lastUserMessage) {
   const user = await sql`SELECT * FROM users WHERE id = ${userId}`;
