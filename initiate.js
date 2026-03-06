@@ -10,6 +10,7 @@ export async function generateFinds() {
     FROM users u
     JOIN user_taste_profiles utp ON utp.user_id = u.id
     WHERE (utp.last_find_at IS NULL OR utp.last_find_at < NOW() - INTERVAL '20 hours')
+      AND u.whatsapp_id IS NOT NULL
   `;
 
   if (!eligibleUsers.length) return [];
@@ -44,14 +45,14 @@ export async function generateFinds() {
       const candidates = await generateCandidates(tasteProfile);
 
       if (!candidates.length) {
-        results.push({ userId: user.id, telegramId: user.telegram_id, action: "silence", reason: "no candidates" });
+        results.push({ userId: user.id, whatsappId: user.whatsapp_id, action: "silence", reason: "no candidates" });
         continue;
       }
 
       const find = await findForUser(user.id, candidates);
 
       if (!find) {
-        results.push({ userId: user.id, telegramId: user.telegram_id, action: "silence", reason: "nothing cleared filter" });
+        results.push({ userId: user.id, whatsappId: user.whatsapp_id, action: "silence", reason: "nothing cleared filter" });
         continue;
       }
 
@@ -84,7 +85,7 @@ export async function generateFinds() {
 
       results.push({
         userId: user.id,
-        telegramId: user.telegram_id,
+        whatsappId: user.whatsapp_id,
         action: "send",
         message,
         reasoningSentence: find.reasoningSentence,

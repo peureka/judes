@@ -1,7 +1,6 @@
-import { bot } from "./bot.js";
 import { generateFinds } from "./initiate.js";
+import { sendWhatsAppMessage } from "./whatsapp.js";
 import { warmup } from "./memory/embeddings.js";
-import { warmupWhisper } from "./media.js";
 import { sweepBriefs } from "./brief.js";
 import { sweepChapters } from "./chapters.js";
 import { computeConnections } from "./taste-graph.js";
@@ -12,12 +11,7 @@ import "dotenv/config";
 // Warm up embedding model (non-blocking)
 warmup();
 
-// Warm up whisper model (non-blocking)
-warmupWhisper();
-
-// Start the bot
-bot.start();
-console.log("judes is awake.");
+console.log("judes cron process is awake.");
 
 // Find engine — runs every 4 hours between 9am-10pm UTC
 cron.schedule("0 9,13,17,21 * * *", async () => {
@@ -28,8 +22,8 @@ cron.schedule("0 9,13,17,21 * * *", async () => {
 
     for (const result of results) {
       if (result.action === "send") {
-        await bot.api.sendMessage(result.telegramId, result.message);
-        console.log(`find sent to ${result.telegramId}: ${result.candidate}`);
+        await sendWhatsAppMessage(result.whatsappId, result.message);
+        console.log(`find sent to ${result.whatsappId}: ${result.candidate}`);
       }
     }
 

@@ -41,3 +41,13 @@ Every product decision, dated. One line each. These are settled. Do not re-litig
 - Find cron runs every 4 hours at 9/13/17/21 UTC. Silence sweep at 2am UTC. Briefs daily 3am. Chapters weekly Sunday 4am. Taste graph weekly Sunday 5am.
 - Taste filter uses Claude Sonnet (quality matters for reasoning sentences). Reaction classification uses Haiku (speed, cost). Taste graph extraction uses Haiku.
 - Spotify is the first and only source integration. YouTube and TMDB deferred until find pipeline is proven.
+
+## 2026-03-06
+
+- Platform pivot: Telegram replaced with WhatsApp (Meta Cloud API direct) + Next.js web app at judes.ai. Reason: Telegram is developer-focused, target user (Naomi) doesn't have it.
+- Web app is the onboarding surface. Three things + decode happen on judes.ai, not in chat.
+- WhatsApp is delivery only. Finds arrive as WhatsApp messages. Users can respond on WhatsApp or on the web timeline.
+- Auth is phone number + OTP sent via WhatsApp. No email. No password.
+- No Twilio. Meta Cloud API direct. Free tier: 1,000 conversations/month.
+- Next.js 14 (App Router) + Tailwind CSS. Deployed to Vercel.
+- The web app is NOT a chatbot. No free conversation. Input field only shows when there's an unanswered find.
