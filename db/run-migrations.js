@@ -37,6 +37,7 @@ const files = [
   "db/migrate-memory.sql",
   "db/migrate-vision.sql",
   "db/migrate-taste-graph.sql",
+  "db/migrate-whatsapp.sql",
 ];
 
 for (const file of files) {
