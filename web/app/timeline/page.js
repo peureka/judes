@@ -3,11 +3,60 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+function ProfilePanel() {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/profile").then((r) => r.json()).then(setProfile);
+  }, []);
+
+  if (!profile) return <p className="text-xs text-[var(--fg-dim)]">...</p>;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <p className="text-xs text-[var(--fg-dim)] mb-2">three things</p>
+        <p className="text-sm">{profile.threeThings?.join(", ")}</p>
+      </div>
+
+      <div>
+        <p className="text-xs text-[var(--fg-dim)] mb-2">decode</p>
+        <p className="text-sm leading-relaxed">{profile.decode}</p>
+      </div>
+
+      {profile.world?.length > 0 && (
+        <div>
+          <p className="text-xs text-[var(--fg-dim)] mb-2">your world</p>
+          <div className="space-y-1">
+            {profile.world.map((item, i) => (
+              <div key={i} className="text-sm">
+                <span className="text-[var(--fg-dim)]">{item.domain}</span>
+                {" - "}
+                <a href={item.searchUrl} target="_blank" rel="noopener noreferrer">
+                  {item.name}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {profile.brief && (
+        <div>
+          <p className="text-xs text-[var(--fg-dim)] mb-2">brief</p>
+          <p className="text-sm leading-relaxed">{profile.brief}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Timeline() {
   const router = useRouter();
   const [data, setData] = useState(null);
   const [input, setInput] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -56,6 +105,15 @@ export default function Timeline() {
   return (
     <main className="flex min-h-screen">
       <div className="flex-1 max-w-2xl mx-auto px-6 py-12">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
+          >
+            {profileOpen ? "close" : "profile"}
+          </button>
+        </div>
+
         <div className="mb-12 pb-8 border-b border-[var(--fg-dim)]/10">
           <p className="text-xs text-[var(--fg-dim)] mb-2">
             {data.threeThings.join(", ")}
@@ -111,6 +169,12 @@ export default function Timeline() {
 
         <div ref={bottomRef} />
       </div>
+
+      {profileOpen && (
+        <aside className="w-80 border-l border-[var(--fg-dim)]/10 px-6 py-12 overflow-y-auto">
+          <ProfilePanel />
+        </aside>
+      )}
     </main>
   );
 }
