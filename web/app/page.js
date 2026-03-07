@@ -46,6 +46,12 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
+      <a
+        href="/connect"
+        className="fixed top-6 right-6 text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] no-underline"
+      >
+        sign in
+      </a>
       <div className="w-full max-w-lg">
         <p className="text-sm text-[var(--fg-dim)] mb-8">
           three things. anything - a film, a city, a texture, a feeling. whatever comes first.
