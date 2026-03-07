@@ -66,3 +66,37 @@ Session-by-session log of what was built, changed, and decided. This is the memo
 **Known issue:** Decode brief (section 3) not appearing in Telegram reply — likely a `---` separator parsing issue in `decode.js`. The brief is stored in the users table separately so it doesn't affect find pipeline functionality.
 
 **What's next:** Test the find pipeline end-to-end (trigger a find cron run manually, verify Spotify candidates → taste filter → Telegram delivery). Deploy to persistent hosting. Build judes.ai landing page.
+
+---
+
+## Session 3 — 2026-03-07
+
+**What happened:** Email delivery replaces WhatsApp. Meta Cloud API blocked (no FB account, ad account locked). Pivoted to Resend for email delivery with click tracking and styled HTML finds.
+
+**Architecture shift:** WhatsApp (Meta Cloud API) → Email (Resend). Auth changes from phone + OTP to email magic link. Responses move entirely to web timeline at judes.ai.
+
+**Files created:**
+- `email.js` — Resend SDK integration. `sendFind()` sends styled HTML find emails (dark bg, monospace, tracked links). `sendMagicLink()` sends auth emails. Lazy Resend client init.
+- `web/app/api/click/route.js` — Click tracking redirect. Logs to `find_clicks` table, redirects to Spotify URL or timeline. Fire-and-forget for respond clicks.
+- `web/app/api/auth/send/route.js` — Magic link send endpoint. Generates UUID token, stores in `auth_tokens` with 15min expiry, sends via Resend.
+- `web/app/api/auth/verify/route.js` — Magic link verify. GET endpoint (user clicks email link). Validates token, creates JWT session, sets cookie, redirects to `/timeline`.
+- `web/app/api/decode/email/route.js` — Saves email to user record after onboarding decode.
+- `db/migrate-email.sql` — New tables: `find_clicks` (UUID FK to find_records), `auth_tokens`. New column: `users.email`.
+
+**Files modified:**
+- `initiate.js` — `whatsapp_id` → `email` in queries and result objects. `find_records` INSERT now returns ID for click tracking.
+- `index.js` — Imports `sendFind` from `email.js` instead of `sendWhatsAppMessage` from `whatsapp.js`. Passes structured find object.
+- `web/app/page.js` — DecodeView: WhatsApp connect link → email capture form with magic link send.
+- `web/app/connect/page.js` — Phone + OTP → email magic link flow.
+- `web/app/timeline/page.js` — Added `?find=` deep-link support (scrolls to specific find from email), Suspense wrapper.
+- `web/lib/auth.js` — Removed OTP functions (generateOTP, storeOTP, verifyOTP). Added `generateMagicToken()`. Changed `createSession` param from phoneNumber to email.
+- `db/run-migrations.js` — Added `migrate-email.sql` to migration list.
+- `.env.example` — Replaced WhatsApp env vars with `RESEND_API_KEY` and `BASE_URL`.
+
+**Files deleted:**
+- `whatsapp.js` — Replaced by `email.js`
+- `web/app/api/whatsapp/webhook/route.js` — No longer needed
+- `web/app/api/auth/send-otp/route.js` — Replaced by `/auth/send`
+- `web/app/api/auth/verify-otp/route.js` — Replaced by `/auth/verify`
+
+**What's next:** Add RESEND_API_KEY to .env. Verify domain (judes.ai) in Resend dashboard. Test end-to-end: onboarding → email capture → find cron → email delivery → click tracking → timeline response. Deploy to Vercel + persistent cron host.

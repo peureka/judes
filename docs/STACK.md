@@ -6,14 +6,14 @@ This document is the technical source of truth. It lives in both the repo (for C
 
 ## Architecture
 
-Judes is a Next.js web app (judes.ai) + WhatsApp delivery, backed by Claude API, with data stored in Neon Postgres (with pgvector for embeddings). The user touches judes.ai and WhatsApp. Everything else is invisible.
+Judes is a Next.js web app (judes.ai) + email delivery via Resend, backed by Claude API, with data stored in Neon Postgres (with pgvector for embeddings). The user touches judes.ai and their email inbox. Everything else is invisible.
 
 ```
 User ←→ judes.ai (Next.js on Vercel) ←→ Claude API (decode, reasoning, taste filter, reaction classifier)
                                               ↓
-User ←→ WhatsApp (Meta Cloud API)       Neon Postgres + pgvector (taste graph, user profiles, find records, memory)
+User ←→ Email (Resend)                 Neon Postgres + pgvector (taste graph, user profiles, find records, memory)
                                               ↓
-                                     Source Integrations (Spotify, YouTube, TMDB)
+                                     Source Integrations (Spotify)
                                               ↓
                                      Initiation Engine (cron — evaluate, filter, send or stay silent)
 ```
@@ -37,8 +37,8 @@ User ←→ WhatsApp (Meta Cloud API)       Neon Postgres + pgvector (taste grap
 5. Claude scores relevance and generates reasoning sentence
 6. Run reasoning sentence through integrity audit (specificity, flatness, software test, duplication, Naomi test)
 7. If nothing clears → do nothing. Silence.
-8. If a find clears → send via WhatsApp. Write FindRecord to Neon Postgres.
-9. Wait for response (via WhatsApp webhook or web timeline). Classify as ReactionSignal. Update taste vector. Create new TasteEdges if warranted.
+8. If a find clears → send via email (Resend). Write FindRecord to Neon Postgres.
+9. Wait for response (via web timeline at judes.ai). Classify as ReactionSignal. Update taste vector. Create new TasteEdges if warranted.
 
 ### Data flow: reaction
 
@@ -57,7 +57,7 @@ User ←→ WhatsApp (Meta Cloud API)       Neon Postgres + pgvector (taste grap
 | Component | Technology | Purpose |
 |---|---|---|
 | Web app | Next.js 14 (App Router) on Vercel | judes.ai — onboarding, timeline, taste profile |
-| Messaging | WhatsApp (Meta Cloud API) | Find delivery, inbound responses, OTP auth |
+| Email | Resend | Find delivery (styled HTML), magic link auth |
 | AI engine | Claude API (Sonnet) | Decode generation, reasoning sentences, taste filtering |
 | Storage | Neon Postgres + pgvector | Taste graph, user profiles, find records, reaction signals, memory |
 
@@ -96,6 +96,9 @@ Full schema definition is in `docs/IDENTITY.md` under "The Taste Graph." Summary
 | ReactionSignal | Typed response to a find | Every response (or silence timeout) |
 | DecodePattern | Three-input combinations and their through-lines | Onboarding |
 
+| find_clicks | Click tracking for email links (Spotify, respond) | Every email link click |
+| auth_tokens | Magic link tokens for email auth | Every login attempt |
+
 Edge types: sensory, emotional, structural, corrective. These are injected into the Claude API prompt when generating reasoning sentences so it knows *how* to connect, not just *whether* to connect.
 
 ---
@@ -125,7 +128,7 @@ Next.js 14 (App Router) + Tailwind CSS. Deployed to Vercel.
 - Landing page with onboarding (three things + decode)
 - Timeline page showing finds and allowing responses
 - Taste profile side panel
-- Auth via phone number + OTP sent via WhatsApp
+- Auth via email magic link (Resend)
 - Mobile-first. Looks good on a phone screen.
 
 ---
@@ -146,7 +149,6 @@ These are not decided yet. Log the decision in DECISIONS.md when resolved.
 
 - Hosting platform (VPS vs Railway vs Fly.io vs other)
 - Cron implementation (system cron vs node-cron vs platform scheduler)
-- WhatsApp number
 - Exact cron frequency for initiation engine
 - Embedding model for taste_vector (currently MiniLM-L6-v2 via @xenova/transformers — evaluate alternatives)
 - Whether to use Claude Sonnet or Haiku for different prompt types (cost vs quality tradeoff)

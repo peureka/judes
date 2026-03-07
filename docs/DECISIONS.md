@@ -51,3 +51,13 @@ Every product decision, dated. One line each. These are settled. Do not re-litig
 - No Twilio. Meta Cloud API direct. Free tier: 1,000 conversations/month.
 - Next.js 14 (App Router) + Tailwind CSS. Deployed to Vercel.
 - The web app is NOT a chatbot. No free conversation. Input field only shows when there's an unanswered find.
+
+## 2026-03-07
+
+- Email replaces WhatsApp. Meta Cloud API blocked (no FB account, ad account locked). No platform gatekeeping with email.
+- Resend is the email service. Developer-first, 3,000 free emails/month, simple API.
+- Find emails are styled HTML (dark bg, monospace, Judes aesthetic). Not plain text.
+- Click tracking on all email links via /api/click redirect endpoint. Spotify clicks without response = soft confirmation.
+- Auth is email magic link. No OTP. No password. Email is the identity.
+- Responses happen on web timeline at judes.ai/timeline. Find emails link to ?find=id.
+- No Twilio. Direct Resend integration. Simpler, no Meta dependency.
