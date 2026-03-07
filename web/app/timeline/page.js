@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function ProfilePanel() {
   const [profile, setProfile] = useState(null);
@@ -51,13 +51,16 @@ function ProfilePanel() {
   );
 }
 
-export default function Timeline() {
+function Timeline() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetFindId = searchParams.get("find");
   const [data, setData] = useState(null);
   const [input, setInput] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const bottomRef = useRef(null);
+  const findRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/timeline")
@@ -69,8 +72,12 @@ export default function Timeline() {
   }, [router]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [data]);
+    if (targetFindId && findRef.current) {
+      findRef.current.scrollIntoView({ behavior: "smooth" });
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [data, targetFindId]);
 
   async function handleRespond(e) {
     e.preventDefault();
@@ -123,7 +130,7 @@ export default function Timeline() {
 
         <div className="space-y-8">
           {data.finds.map((find) => (
-            <div key={find.id} className="space-y-3">
+            <div key={find.id} ref={find.id.toString() === targetFindId ? findRef : null} className="space-y-3">
               <div>
                 {find.source_url && (
                   <a
@@ -176,5 +183,13 @@ export default function Timeline() {
         </aside>
       )}
     </main>
+  );
+}
+
+export default function TimelinePage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center"><p className="text-sm text-[var(--fg-dim)]">...</p></main>}>
+      <Timeline />
+    </Suspense>
   );
 }
