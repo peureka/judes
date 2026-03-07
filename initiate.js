@@ -10,7 +10,7 @@ export async function generateFinds() {
     FROM users u
     JOIN user_taste_profiles utp ON utp.user_id = u.id
     WHERE (utp.last_find_at IS NULL OR utp.last_find_at < NOW() - INTERVAL '20 hours')
-      AND u.whatsapp_id IS NOT NULL
+      AND u.email IS NOT NULL
   `;
 
   if (!eligibleUsers.length) return [];
@@ -45,14 +45,14 @@ export async function generateFinds() {
       const candidates = await generateCandidates(tasteProfile);
 
       if (!candidates.length) {
-        results.push({ userId: user.id, whatsappId: user.whatsapp_id, action: "silence", reason: "no candidates" });
+        results.push({ userId: user.id, email: user.email, action: "silence", reason: "no candidates" });
         continue;
       }
 
       const find = await findForUser(user.id, candidates);
 
       if (!find) {
-        results.push({ userId: user.id, whatsappId: user.whatsapp_id, action: "silence", reason: "nothing cleared filter" });
+        results.push({ userId: user.id, email: user.email, action: "silence", reason: "nothing cleared filter" });
         continue;
       }
 
@@ -66,9 +66,10 @@ export async function generateFinds() {
         RETURNING id
       `;
 
-      await sql`
+      const findRecord = await sql`
         INSERT INTO find_records (user_id, node_id, reasoning_sentence, reasoning_edges, source_url, source_type, message_id)
         VALUES (${user.id}, ${find.nodeId}, ${find.reasoningSentence}, ${find.edgeId ? [find.edgeId] : []}, ${find.candidate.spotifyUrl}, 'spotify', ${msgResult[0].id})
+        RETURNING id
       `;
 
       await sql`
@@ -85,11 +86,12 @@ export async function generateFinds() {
 
       results.push({
         userId: user.id,
-        whatsappId: user.whatsapp_id,
+        email: user.email,
         action: "send",
-        message,
+        findRecordId: findRecord[0].id,
         reasoningSentence: find.reasoningSentence,
         candidate: find.candidate.name,
+        sourceUrl: find.candidate.spotifyUrl,
       });
     } catch (err) {
       console.error(`find generation failed for user ${user.id}:`, err.message);

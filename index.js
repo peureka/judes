@@ -1,5 +1,5 @@
 import { generateFinds } from "./initiate.js";
-import { sendWhatsAppMessage } from "./whatsapp.js";
+import { sendFind } from "./email.js";
 import { warmup } from "./memory/embeddings.js";
 import { sweepBriefs } from "./brief.js";
 import { sweepChapters } from "./chapters.js";
@@ -22,8 +22,13 @@ cron.schedule("0 9,13,17,21 * * *", async () => {
 
     for (const result of results) {
       if (result.action === "send") {
-        await sendWhatsAppMessage(result.whatsappId, result.message);
-        console.log(`find sent to ${result.whatsappId}: ${result.candidate}`);
+        await sendFind(result.email, {
+          findRecordId: result.findRecordId,
+          reasoningSentence: result.reasoningSentence,
+          sourceUrl: result.sourceUrl,
+          candidateName: result.candidate,
+        });
+        console.log(`find sent to ${result.email}: ${result.candidate}`);
       }
     }
 
