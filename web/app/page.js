@@ -70,6 +70,40 @@ export default function Home() {
 }
 
 function DecodeView({ result }) {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [emailError, setEmailError] = useState(null);
+
+  async function handleEmail(e) {
+    e.preventDefault();
+    setEmailError(null);
+
+    if (!email.trim()) return;
+
+    try {
+      const authRes = await fetch("/api/auth/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      if (!authRes.ok) {
+        setEmailError("try again.");
+        return;
+      }
+
+      await fetch("/api/decode/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: result.userId, email: email.trim() }),
+      });
+
+      setSent(true);
+    } catch {
+      setEmailError("try again.");
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-start justify-center px-6 py-16">
       <div className="w-full max-w-lg space-y-10">
@@ -90,12 +124,28 @@ function DecodeView({ result }) {
         )}
 
         <div className="pt-6 border-t border-[var(--fg-dim)]/20">
-          <p className="text-sm text-[var(--fg-dim)] mb-4">
-            when something's yours, it'll arrive on whatsapp.
-          </p>
-          <a href={`/connect?userId=${result.userId}`} className="text-sm">
-            connect
-          </a>
+          {sent ? (
+            <p className="text-sm text-[var(--fg-dim)]">
+              check your email. when something's yours, it'll arrive there.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-[var(--fg-dim)] mb-4">
+                your email. when something's yours, it'll arrive there.
+              </p>
+              <form onSubmit={handleEmail}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full bg-transparent border-b border-[var(--fg-dim)] text-[var(--fg)] text-base py-3 px-0 focus:outline-none focus:border-[var(--fg)] placeholder:text-[var(--fg-dim)] placeholder:opacity-50"
+                  autoFocus
+                />
+                {emailError && <p className="text-sm text-[var(--fg-dim)] mt-3">{emailError}</p>}
+              </form>
+            </>
+          )}
         </div>
       </div>
     </main>
