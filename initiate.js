@@ -67,8 +67,8 @@ export async function generateFinds() {
       `;
 
       const findRecord = await sql`
-        INSERT INTO find_records (user_id, node_id, reasoning_sentence, reasoning_edges, source_url, source_type, message_id)
-        VALUES (${user.id}, ${find.nodeId}, ${find.reasoningSentence}, ${find.edgeId ? [find.edgeId] : []}, ${find.candidate.spotifyUrl}, 'spotify', ${msgResult[0].id})
+        INSERT INTO find_records (user_id, node_id, reasoning_sentence, reasoning_edges, source_url, source_type, message_id, candidate_name)
+        VALUES (${user.id}, ${find.nodeId}, ${find.reasoningSentence}, ${find.edgeId ? [find.edgeId] : []}, ${find.candidate.spotifyUrl}, 'spotify', ${msgResult[0].id}, ${find.candidate.name})
         RETURNING id
       `;
 

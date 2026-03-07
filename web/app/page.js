@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Home() {
+function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [checking, setChecking] = useState(true);
+
+  const authError = searchParams.get("error");
+
+  useEffect(() => {
+    fetch("/api/timeline")
+      .then((r) => {
+        if (r.ok) {
+          router.replace("/timeline");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  }, [router]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -40,6 +58,14 @@ export default function Home() {
     }
   }
 
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6">
+        <p className="text-sm text-[var(--fg-dim)]">...</p>
+      </main>
+    );
+  }
+
   if (result) {
     return <DecodeView result={result} />;
   }
@@ -53,6 +79,11 @@ export default function Home() {
         sign in
       </a>
       <div className="w-full max-w-lg">
+        {authError && (
+          <p className="text-sm text-[var(--fg-dim)] mb-6">
+            {authError === "expired" ? "link expired. try again." : "something went wrong. try again."}
+          </p>
+        )}
         <p className="text-sm text-[var(--fg-dim)] mb-8">
           three things. anything - a film, a city, a texture, a feeling. whatever comes first.
         </p>
@@ -131,13 +162,18 @@ function DecodeView({ result }) {
 
         <div className="pt-6 border-t border-[var(--fg-dim)]/20">
           {sent ? (
-            <p className="text-sm text-[var(--fg-dim)]">
-              check your email. when something's yours, it'll arrive there.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-[var(--fg-dim)]">
+                check your email for a sign-in link.
+              </p>
+              <p className="text-sm text-[var(--fg-dim)]">
+                finds will arrive there too, when something is yours.
+              </p>
+            </div>
           ) : (
             <>
               <p className="text-sm text-[var(--fg-dim)] mb-4">
-                your email. when something's yours, it'll arrive there.
+                your email. finds arrive there.
               </p>
               <form onSubmit={handleEmail}>
                 <input
@@ -155,5 +191,13 @@ function DecodeView({ result }) {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center"><p className="text-sm text-[var(--fg-dim)]">...</p></main>}>
+      <Home />
+    </Suspense>
   );
 }

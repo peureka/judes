@@ -15,6 +15,8 @@ export async function GET() {
       fr.reasoning_sentence,
       fr.source_url,
       fr.source_type,
+      fr.candidate_name,
+      fr.judes_reply,
       fr.sent_at,
       fr.response_at,
       rs.signal_type,

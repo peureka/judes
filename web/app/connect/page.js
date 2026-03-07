@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Suspense } from "react";
+import { useState, Suspense } from "react";
 
 function ConnectForm() {
   const [email, setEmail] = useState("");
@@ -29,13 +28,19 @@ function ConnectForm() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
+      <a
+        href="/"
+        className="fixed top-6 left-6 text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] no-underline"
+      >
+        judes
+      </a>
       <div className="w-full max-w-sm">
         {sent ? (
           <p className="text-sm text-[var(--fg-dim)]">check your email.</p>
         ) : (
           <form onSubmit={handleSubmit}>
             <p className="text-sm text-[var(--fg-dim)] mb-6">
-              your email.
+              your email. we'll send a link.
             </p>
             <input
               type="email"

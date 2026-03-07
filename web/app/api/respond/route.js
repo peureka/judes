@@ -31,10 +31,10 @@ export async function POST(request) {
   const reply = await respondToReaction(userId, text, find[0], reaction);
 
   if (reply) {
-    await sql`
-      INSERT INTO messages (user_id, role, content)
-      VALUES (${userId}, 'judes', ${reply})
-    `;
+    await Promise.all([
+      sql`INSERT INTO messages (user_id, role, content) VALUES (${userId}, 'judes', ${reply})`,
+      sql`UPDATE find_records SET judes_reply = ${reply} WHERE id = ${findId}`,
+    ]);
   }
 
   return Response.json({ reply: reply || null });

@@ -64,7 +64,7 @@ export async function sendFind(email, find) {
     const { data, error } = await resend().emails.send({
       from: FROM,
       to: email,
-      subject: candidateName || "",
+      subject: candidateName || "judes",
       html,
     });
     if (error) {
