@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { sql } from "./db/index.js";
+import { shouldRegenerate, generateTastePrompt } from "./taste-prompt.js";
 
 const client = new Anthropic();
 
@@ -83,6 +84,15 @@ export async function classifyReaction(findId, userId, responseText) {
       }
     }
   }
+
+  // Check if taste prompt needs regeneration (fire-and-forget)
+  shouldRegenerate(userId).then(({ should, reason }) => {
+    if (should) {
+      generateTastePrompt(userId, reason).catch((err) =>
+        console.error("taste prompt regeneration failed:", err.message)
+      );
+    }
+  });
 
   return { signalType: safeType, tasteInsight };
 }

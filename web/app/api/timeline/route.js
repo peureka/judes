@@ -40,10 +40,19 @@ export async function GET() {
     SELECT three_things, taste_decode FROM users WHERE id = ${userId}
   `;
 
+  const tastePrompts = await sql`
+    SELECT prompt_text, version, created_at
+    FROM taste_prompts
+    WHERE user_id = ${userId}
+    ORDER BY version DESC
+  `;
+
   return Response.json({
     finds,
     unansweredFind: unanswered[0] || null,
     threeThings: user[0]?.three_things || [],
     decode: user[0]?.taste_decode || "",
+    tastePrompt: tastePrompts[0] || null,
+    tastePromptHistory: tastePrompts.slice(1),
   });
 }

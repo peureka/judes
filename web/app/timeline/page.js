@@ -68,6 +68,42 @@ function sourceLabel(find) {
   return null;
 }
 
+function TastePromptSection({ tastePrompt, history }) {
+  const [showingVersion, setShowingVersion] = useState(null);
+
+  if (!tastePrompt) return null;
+
+  const allVersions = [tastePrompt, ...(history || [])];
+  const displayed = showingVersion !== null
+    ? allVersions.find((v) => v.version === showingVersion)
+    : tastePrompt;
+
+  return (
+    <div className="mb-12 pb-8 border-b border-[var(--fg-dim)]/10">
+      <p className="text-sm leading-relaxed whitespace-pre-line">
+        {displayed?.prompt_text}
+      </p>
+      {allVersions.length > 1 && (
+        <div className="flex gap-2 mt-3">
+          {allVersions.map((v) => (
+            <button
+              key={v.version}
+              onClick={() => setShowingVersion(v.version === tastePrompt.version && showingVersion === null ? null : v.version)}
+              className={`text-xs ${
+                (showingVersion === null && v.version === tastePrompt.version) || showingVersion === v.version
+                  ? "text-[var(--fg)]"
+                  : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
+              }`}
+            >
+              v{v.version}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Timeline() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -157,6 +193,11 @@ function Timeline() {
           </p>
           <p className="text-sm leading-relaxed">{data.decode}</p>
         </div>
+
+        <TastePromptSection
+          tastePrompt={data.tastePrompt}
+          history={data.tastePromptHistory}
+        />
 
         {hasFinds ? (
           <div className="space-y-8">
