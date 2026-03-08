@@ -72,23 +72,25 @@ This is the problem IDENTITY.md's taste graph was designed to solve at the B2B l
 
 **Verdict:** This directly conflicts with the refusal set and fails the Naomi test. Judes learns through the relationship (sends, reactions, silence), not through prompted choices. The A/B approach is how you'd build a taste engine that feels like software. Judes is not software.
 
-### 4.3 User-facing taste profile
+### 4.3 User-facing taste profile — RESOLVED
 
-**Vision:** Implies users see, manage, and actively use their taste identity. They "inject" taste prompts into other tools.
+**Vision:** Implies users see, manage, and actively use their taste identity.
 
-**IDENTITY.md:** *"The taste model is never declared to the user. There is no 'your taste profile' page. Taste is invisible. The proof is in the finds."*
+**IDENTITY.md:** *"The taste model is never declared to the user. There is no 'your taste profile' page. Taste is invisible."*
 
-**The tension:** Making taste visible turns Judes into a mirror. Judes is a window — it shows you things you didn't know existed, not things you already are. The decode is the one moment Judes reflects you back to yourself, and even that is designed to feel like being seen, not like seeing a dashboard.
+**Resolution (2026-03-08):** The decode already reflects taste back to the user — IDENTITY.md's "invisible" rule was always about dashboards and settings, not about Judes telling you who you are. The taste prompt lives on the timeline as an evolving artifact: the decode's older, denser sibling. Written in Judes' voice. No label, no explanation. Room temperature. Just text. Old versions stay visible — taste geology.
 
-**However:** This doesn't mean taste data can't flow to other services. It means the user shouldn't be the one managing that flow. If a partner app integrates the Judes API and a user consents to sharing their taste profile, the user never sees the taste prompt itself — they just notice the partner app suddenly gets them right. The magic is invisible. That's more Judes than a copy-paste prompt.
+The distinction that holds: no management UI, no sliders, no "your preferences." The user doesn't control the taste prompt. Judes writes it. Judes updates it when the graph earns it. The user reads it, copies it, pastes it into whatever they want. That's not a dashboard. That's Judes telling you something true about yourself that happens to be useful elsewhere.
 
-### 4.4 Portability as user-facing feature
+### 4.4 Portability as user-facing feature — RESOLVED
 
-**Vision:** Users actively carry their taste profile across the AI ecosystem. They copy taste prompts into tools.
+**Vision:** Users actively carry their taste profile across the AI ecosystem.
 
-**IDENTITY.md:** The taste graph is a B2B asset. Users never see the infrastructure. *"None of this is the user's problem. None of it is visible."*
+**IDENTITY.md:** *"None of this is the user's problem. None of it is visible."*
 
-**The reframe:** Portability is real, but it's an API feature, not a consumer feature. The user's experience is: "things that use Judes data seem to understand me." Not: "I exported my taste prompt and pasted it into ChatGPT." The first is magic. The second is plumbing.
+**Resolution (2026-03-08):** Portability is both user-facing AND B2B. The taste prompt on the timeline is the user-facing version — a paragraph they can copy and paste into Claude, ChatGPT, Midjourney, whatever. It's not framed as portability. It's not labelled "export your taste." It's just there, on the timeline, in Judes' voice. What the user does with it is their business.
+
+The B2B API layer is separate — partners get structured taste prompts via authenticated API. Users never see that plumbing. Both paths coexist: the human-readable version on the timeline, the machine-readable version via API.
 
 ### 4.5 "Prompt engineer for your personality"
 
@@ -169,28 +171,32 @@ This is the riskiest of the three ideas because it's closest to the line. It wou
 
 **Passive ingestion is consumption data in disguise.** Scraping someone's Spotify history tells you what they played. It doesn't tell you why "3am cement" exists as a playlist name. The find→reaction loop gets you the "why." That's the data that's actually scarce.
 
-**Showing users their taste profile turns Judes into a mirror.** The decode is the one moment of reflection — and it's designed to feel like being seen by someone, not like looking at a screen. A taste dashboard, no matter how beautifully designed, is a screen.
+**A taste dashboard turns Judes into software.** ~~The decode is the one moment of reflection.~~ *(Resolved: taste prompts live on the timeline as an evolving artifact in Judes' voice — not a dashboard, not manageable, just text. The decode was already a taste articulation. This extends it.)*
 
 ---
 
 ## 7. What Could Be Built (and in What Order)
 
-If the founder decides to adopt elements of this vision, here's the build order that respects IDENTITY.md:
+### Phase 1: Taste prompt generation + timeline surface
+Build `generateTastePrompt(userId)` — reads the full taste graph and produces a single paragraph (maybe two) in Judes' voice. One artifact, not domain-segmented — rich enough that voice, aesthetic, and quality registers are all present in the same text. Different tools pull from different layers.
 
-### Phase 1: Taste prompt generation (internal)
-Build `generateTastePrompt(userId, domain)` — a function that reads a user's taste graph and produces a structured prompt fragment. Domain options: `voice`, `aesthetic`, `quality`, `general`. Uses existing edge types to filter. No new UI, no new ingestion. Test it by using the output to improve Judes' own find quality — the taste prompt becomes a better system prompt for the taste filter.
+Two outputs from the same function:
+- **Timeline version** (human-readable): appears on the user's timeline. Written like Judes writes. No label. The user copies it and pastes it wherever they want.
+- **Internal version** (for taste filter): the same content, used as a better system prompt for Judes' own find scoring. Replaces the current ad hoc assembly of decode + brief + edges.
+
+Versioning: store each generation with timestamp. Old versions stay visible on the timeline. New version generated when the graph changes enough — new corrective edges, through-line shifts, enough reactions to alter the shape. Not on a schedule.
 
 ### Phase 2: Taste prompt API (B2B)
-Expose taste prompts through an authenticated API endpoint. Partners request a taste prompt for a user (with user consent via OAuth or similar). The user never sees the prompt. They just notice the partner app suddenly understands them. This is the "AI Persona Taste Layers" monetisation — now with a concrete delivery format.
+Expose a structured, machine-readable taste prompt through an authenticated API endpoint. Partners get a JSON format (typed edges, domain-specific registers, corrective constraints). Users consent via OAuth. The user never sees the API version — they have the human-readable one on their timeline; the machine-readable one is for developers.
 
 ### Phase 3: Voluntary source enrichment (careful)
 If there's evidence users want to deepen their graph, allow one-time source connections. Letterboxd, Spotify library, Are.na. Processed once, not monitored. Framed as disclosure, not surveillance. Only after the relationship has earned it (months, not days). Must pass the Naomi test.
 
-Phase 1 is pure upside — no new surface, no new ingestion, no conflict with IDENTITY.md. It makes the existing product better while creating the B2B delivery format.
+Phase 1 is the foundation — improves Judes' own finds AND gives users the portable artifact. No new ingestion, no new accounts infrastructure.
 
-Phase 2 is the business model. It requires consent infrastructure and API design but no changes to the consumer experience.
+Phase 2 is the business model. Requires consent infrastructure and API design.
 
-Phase 3 is optional and debatable. It enriches the graph but risks making Judes feel like software. Only worth doing if the relationship model hits a data ceiling — which it hasn't yet.
+Phase 3 is optional and debatable. Only worth doing if the relationship model hits a data ceiling.
 
 ---
 
@@ -198,8 +204,8 @@ Phase 3 is optional and debatable. It enriches the graph but risks making Judes 
 
 1. **Should "taste prompts" become the named format for the B2B API?** The term is clearer than "AI Persona Taste Layers" for developer positioning. It tells a partner exactly what they get: a system prompt fragment they can inject.
 
-2. **Should domain-specific output (voice, aesthetic, quality) be built as an internal tool first?** Using it to improve Judes' own taste filter would validate the concept before exposing it as an API.
+2. **Is voluntary source connection worth exploring, or does it cross a line?** The Naomi test is close on this one. She might share her Letterboxd with someone she trusts — but only if they asked like a person, not like an app.
 
-3. **Is voluntary source connection worth exploring, or does it cross a line?** The Naomi test is close on this one. She might share her Letterboxd with someone she trusts — but only if they asked like a person, not like an app.
+3. **Should this analysis go into NotebookLM?** It maps the vision against IDENTITY.md in a way that could inform the next round of strategic thinking.
 
-4. **Should this analysis go into NotebookLM?** It maps the vision against IDENTITY.md in a way that could inform the next round of strategic thinking.
+4. **When should the taste prompt first appear on the timeline?** After the decode (immediate, sparse)? After the first find reaction (has one data point beyond onboarding)? After N interactions (denser, more accurate)? The question is: how dense does the graph need to be before Judes' articulation of your taste earns the interruption?
