@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { sql } from "./db/index.js";
 import { embed, toVector } from "./memory/embeddings.js";
+import { generateTastePrompt } from "./taste-prompt.js";
 import "dotenv/config";
 
 const client = new Anthropic();
@@ -211,4 +212,9 @@ export async function extractTasteGraph(threeThings, decodeText, userId) {
   `;
 
   console.log(`taste graph: extracted ${nodes.length} nodes, ${edgeIds.length} edges for user ${userId}`);
+
+  // Generate first taste prompt (sparse, from onboarding data only)
+  generateTastePrompt(userId, "onboarding").catch((err) =>
+    console.error("taste prompt generation failed:", err.message)
+  );
 }

@@ -61,3 +61,11 @@ Every product decision, dated. One line each. These are settled. Do not re-litig
 - Auth is email magic link. No OTP. No password. Email is the identity.
 - Responses happen on web timeline at judes.ai/timeline. Find emails link to ?find=id.
 - No Twilio. Direct Resend integration. Simpler, no Meta dependency.
+
+## 2026-03-08
+
+- Taste prompts are user-facing. They live on the timeline as an evolving artifact — the decode's older, denser sibling. Written in Judes' voice. No label, no explanation, no "your taste prompt" header. Room temperature. Just text.
+- Taste prompts are versioned. Old versions stay visible on the timeline. Users can see how their taste has shifted over time.
+- Taste prompts are one artifact, not domain-segmented. Not separate voice/design/writing tabs. One prompt rich enough to work across domains — because taste is cross-domain. Sensory, structural, emotional, and corrective layers all present in the same text so different tools can pull from different registers.
+- Taste prompts update when the graph earns it — new corrective edges, through-line shifts, enough reactions to change the shape. Not on a schedule.
+- This does not conflict with IDENTITY.md's "taste is invisible" rule. The decode already reflects taste back to the user. The taste prompt extends this — Judes telling you who you are, not showing you a dashboard.

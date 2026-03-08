@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { sql } from "./db/index.js";
+import { getCurrentTastePrompt } from "./taste-prompt.js";
 
 const client = new Anthropic();
 
@@ -41,7 +42,7 @@ export async function filterCandidate(candidate, tasteProfile) {
 three things: ${tasteProfile.onboarding_inputs.join(", ")}
 decode: ${tasteProfile.decode}
 brief: ${tasteProfile.brief || "not yet generated"}
-
+${tasteProfile.tastePrompt ? `\ntaste prompt:\n${tasteProfile.tastePrompt}\n` : ""}
 taste edges:
 ${(tasteProfile.edges || []).map((e) => `- [${e.edge_type}] ${e.reasoning}`).join("\n") || "none yet"}
 
@@ -101,6 +102,12 @@ export async function findForUser(userId, candidates) {
     : [];
 
   tasteProfile.edges = edges;
+
+  // Include taste prompt if available
+  const tastePrompt = await getCurrentTastePrompt(userId);
+  if (tastePrompt) {
+    tasteProfile.tastePrompt = tastePrompt.prompt_text;
+  }
 
   const sentFinds = await sql`
     SELECT node_id FROM find_records WHERE user_id = ${userId}

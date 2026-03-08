@@ -40,6 +40,7 @@ const files = [
   "db/migrate-whatsapp.sql",
   "db/migrate-email.sql",
   "db/migrate-ui.sql",
+  "db/migrate-taste-prompt.sql",
 ];
 
 for (const file of files) {
