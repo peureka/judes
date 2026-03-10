@@ -132,6 +132,25 @@ function Timeline() {
     }
   }, [data, targetFindId]);
 
+  async function handleQuickRespond(text) {
+    if (!data?.unansweredFind) return;
+    setReplyLoading(true);
+    try {
+      await fetch("/api/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ findId: data.unansweredFind.id, text }),
+      });
+      const refreshed = await fetch("/api/timeline").then((r) => r.json());
+      setData(refreshed);
+      setInput("");
+    } catch {
+      // silent
+    } finally {
+      setReplyLoading(false);
+    }
+  }
+
   async function handleRespond(e) {
     e.preventDefault();
     if (!input.trim() || !data?.unansweredFind) return;
@@ -173,6 +192,12 @@ function Timeline() {
     <main className="flex min-h-screen relative">
       <div className="flex-1 max-w-2xl mx-auto px-6 py-12">
         <div className="flex justify-end gap-4 mb-4">
+          <a
+            href="/decode"
+            className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] no-underline"
+          >
+            new decode
+          </a>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
             className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
@@ -244,17 +269,41 @@ function Timeline() {
         )}
 
         {data.unansweredFind && (
-          <form onSubmit={handleRespond} className="mt-12 pt-6 border-t border-[var(--fg-dim)]/10">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="w-full bg-transparent border-b border-[var(--fg-dim)] text-[var(--fg)] text-sm py-2 px-0 focus:outline-none focus:border-[var(--fg)]"
-              disabled={replyLoading}
-              autoFocus
-            />
-            {replyLoading && <p className="text-xs text-[var(--fg-dim)] mt-2">...</p>}
-          </form>
+          <div className="mt-12 pt-6 border-t border-[var(--fg-dim)]/10">
+            <div className="flex gap-4 mb-4">
+              <button
+                onClick={() => {
+                  setInput("this fits");
+                  handleQuickRespond("this fits");
+                }}
+                disabled={replyLoading}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] underline underline-offset-2 decoration-[var(--fg-dim)]/40 hover:decoration-[var(--fg)]"
+              >
+                this fits
+              </button>
+              <button
+                onClick={() => {
+                  setInput("not this thread");
+                  handleQuickRespond("not this thread");
+                }}
+                disabled={replyLoading}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] underline underline-offset-2 decoration-[var(--fg-dim)]/40 hover:decoration-[var(--fg)]"
+              >
+                not this thread
+              </button>
+            </div>
+            <form onSubmit={handleRespond}>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="say something"
+                className="w-full bg-transparent border-b border-[var(--fg-dim)] text-[var(--fg)] text-sm py-2 px-0 focus:outline-none focus:border-[var(--fg)] placeholder:text-[var(--fg-dim)] placeholder:opacity-50"
+                disabled={replyLoading}
+              />
+              {replyLoading && <p className="text-xs text-[var(--fg-dim)] mt-2">...</p>}
+            </form>
+          </div>
         )}
 
         <div ref={bottomRef} />

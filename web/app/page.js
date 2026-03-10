@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-function Home() {
+export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
   const [checking, setChecking] = useState(true);
-
-  const authError = searchParams.get("error");
 
   useEffect(() => {
     fetch("/api/timeline")
@@ -26,38 +19,6 @@ function Home() {
       .catch(() => setChecking(false));
   }, [router]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(null);
-
-    const things = input.split(/[,\n]/).map((t) => t.trim()).filter(Boolean);
-    if (things.length < 3) {
-      setError("three things. not two.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/decode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threeThings: things.slice(0, 3) }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "nothing right now. soon.");
-        return;
-      }
-
-      setResult(data);
-    } catch {
-      setError("nothing right now. soon.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   if (checking) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
@@ -66,138 +27,111 @@ function Home() {
     );
   }
 
-  if (result) {
-    return <DecodeView result={result} />;
-  }
-
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="min-h-screen px-6 py-16 md:py-24">
       <a
         href="/connect"
         className="fixed top-6 right-6 text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] no-underline"
       >
         sign in
       </a>
-      <div className="w-full max-w-lg">
-        {authError && (
-          <p className="text-sm text-[var(--fg-dim)] mb-6">
-            {authError === "expired" ? "link expired. try again." : "something went wrong. try again."}
+
+      <div className="max-w-lg mx-auto space-y-24">
+        {/* Hero */}
+        <section className="space-y-6">
+          <h1 className="text-base leading-relaxed">
+            a machine for feeling uniquely understood through culture.
+          </h1>
+          <p className="text-sm text-[var(--fg-dim)] leading-relaxed">
+            judes remembers your pattern, spots hidden affinities,
+            and sends one rare find only when it is worth it.
           </p>
-        )}
-        <p className="text-sm text-[var(--fg-dim)] mb-8">
-          three things. anything - a film, a city, a texture, a feeling. whatever comes first.
-        </p>
+          <a
+            href="/decode"
+            className="inline-block text-sm text-[var(--fg)] no-underline border-b border-[var(--fg-dim)] pb-0.5 hover:border-[var(--fg)]"
+          >
+            get decoded
+          </a>
+        </section>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="tirzah, peckham, concrete"
-            className="w-full bg-transparent border-b border-[var(--fg-dim)] text-[var(--fg)] text-base py-3 px-0 focus:outline-none focus:border-[var(--fg)] placeholder:text-[var(--fg-dim)] placeholder:opacity-50"
-            disabled={loading}
-            autoFocus
-          />
-          {error && <p className="text-sm text-[var(--fg-dim)] mt-3">{error}</p>}
-          {loading && <p className="text-sm text-[var(--fg-dim)] mt-3">...</p>}
-        </form>
-      </div>
-    </main>
-  );
-}
-
-function DecodeView({ result }) {
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [emailError, setEmailError] = useState(null);
-
-  async function handleEmail(e) {
-    e.preventDefault();
-    setEmailError(null);
-
-    if (!email.trim()) return;
-
-    try {
-      const authRes = await fetch("/api/auth/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-
-      if (!authRes.ok) {
-        setEmailError("try again.");
-        return;
-      }
-
-      await fetch("/api/decode/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: result.userId, email: email.trim() }),
-      });
-
-      setSent(true);
-    } catch {
-      setEmailError("try again.");
-    }
-  }
-
-  return (
-    <main className="flex min-h-screen items-start justify-center px-6 py-16">
-      <div className="w-full max-w-lg space-y-10">
-        <p className="text-base leading-relaxed">{result.decode}</p>
-
-        {result.world?.length > 0 && (
-          <div className="space-y-2">
-            {result.world.map((item, i) => (
-              <div key={i} className="text-sm">
-                <span className="text-[var(--fg-dim)]">{item.domain}</span>
-                {" - "}
-                <a href={item.searchUrl} target="_blank" rel="noopener noreferrer">
-                  {item.name}
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="pt-6 border-t border-[var(--fg-dim)]/20">
-          {sent ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[var(--fg-dim)]">
-                check your email for a sign-in link.
+        {/* How it works */}
+        <section className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-[var(--fg-dim)] mb-1">1</p>
+              <p className="text-sm leading-relaxed">
+                give judes three signals.
               </p>
-              <p className="text-sm text-[var(--fg-dim)]">
-                finds will arrive there too, when something is yours.
+              <p className="text-xs text-[var(--fg-dim)] mt-1">
+                songs, films, places, images, books, moods, references. anything with cultural pull.
               </p>
             </div>
-          ) : (
-            <>
-              <p className="text-sm text-[var(--fg-dim)] mb-4">
-                your email. finds arrive there.
+            <div>
+              <p className="text-xs text-[var(--fg-dim)] mb-1">2</p>
+              <p className="text-sm leading-relaxed">
+                get decoded.
               </p>
-              <form onSubmit={handleEmail}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full bg-transparent border-b border-[var(--fg-dim)] text-[var(--fg)] text-base py-3 px-0 focus:outline-none focus:border-[var(--fg)] placeholder:text-[var(--fg-dim)] placeholder:opacity-50"
-                  autoFocus
-                />
-                {emailError && <p className="text-sm text-[var(--fg-dim)] mt-3">{emailError}</p>}
-              </form>
-            </>
-          )}
-        </div>
+              <p className="text-xs text-[var(--fg-dim)] mt-1">
+                judes writes a short reading of your taste, your patterns, and your cultural pull.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--fg-dim)] mb-1">3</p>
+              <p className="text-sm leading-relaxed">
+                receive finds.
+              </p>
+              <p className="text-xs text-[var(--fg-dim)] mt-1">
+                when judes finds something worth sending, it emails you one thing with one sentence explaining why it is yours.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--fg-dim)] mb-1">4</p>
+              <p className="text-sm leading-relaxed">
+                get sharper over time.
+              </p>
+              <p className="text-xs text-[var(--fg-dim)] mt-1">
+                every interaction helps judes understand your taste more deeply.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Why it's different */}
+        <section className="space-y-3">
+          <p className="text-sm leading-relaxed">
+            most systems recommend by similarity. judes works by cultural inference.
+          </p>
+          <p className="text-sm text-[var(--fg-dim)] leading-relaxed">
+            it looks past surface matches and finds the deeper thread across what you love.
+            that is why the right find feels surprising and inevitable at once.
+          </p>
+        </section>
+
+        {/* Silence */}
+        <section className="space-y-3">
+          <p className="text-sm leading-relaxed">
+            silence is part of the product.
+          </p>
+          <p className="text-sm text-[var(--fg-dim)] leading-relaxed">
+            judes does not send because a schedule says it should.
+            it sends when it has something worth sending.
+            fewer emails. fewer interruptions. a higher bar for every find.
+          </p>
+        </section>
+
+        {/* Final CTA */}
+        <section className="space-y-4">
+          <p className="text-sm text-[var(--fg-dim)]">
+            not more recommendations. better ones.
+          </p>
+          <a
+            href="/decode"
+            className="inline-block text-sm text-[var(--fg)] no-underline border-b border-[var(--fg-dim)] pb-0.5 hover:border-[var(--fg)]"
+          >
+            get your taste decoded
+          </a>
+        </section>
       </div>
     </main>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<main className="flex min-h-screen items-center justify-center"><p className="text-sm text-[var(--fg-dim)]">...</p></main>}>
-      <Home />
-    </Suspense>
   );
 }

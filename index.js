@@ -27,6 +27,7 @@ cron.schedule("0 9,13,17,21 * * *", async () => {
           reasoningSentence: result.reasoningSentence,
           sourceUrl: result.sourceUrl,
           candidateName: result.candidate,
+          sourceType: result.sourceType,
         });
         console.log(`find sent to ${result.email}: ${result.candidate}`);
       }
@@ -35,6 +36,9 @@ cron.schedule("0 9,13,17,21 * * *", async () => {
     const sent = results.filter((r) => r.action === "send").length;
     const silent = results.filter((r) => r.action === "silence").length;
     console.log(`find round: ${sent} sent, ${silent} silent`);
+    if (sent === 0) {
+      console.log(`[cron] ${new Date().toISOString()} - full silence. nothing cleared.`);
+    }
   } catch (err) {
     console.error("find generation failed:", err.message);
   }
@@ -72,8 +76,8 @@ cron.schedule("0 4 * * 0", async () => {
   }
 });
 
-// Weekly taste graph computation — Sunday 5am UTC
-cron.schedule("0 5 * * 0", async () => {
+// Daily taste graph computation — 2:30am UTC
+cron.schedule("30 2 * * *", async () => {
   console.log("computing taste graph...");
   try {
     await computeConnections();

@@ -3,14 +3,14 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "judes",
-  description: "three things.",
+  description: "a machine for feeling uniquely understood through culture.",
   metadataBase: new URL("https://judes.ai"),
   icons: {
     icon: "/favicon.svg",
   },
   openGraph: {
     title: "judes",
-    description: "three things.",
+    description: "a machine for feeling uniquely understood through culture.",
     url: "https://judes.ai",
     siteName: "judes",
     images: [
@@ -25,7 +25,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "judes",
-    description: "three things.",
+    description: "a machine for feeling uniquely understood through culture.",
     images: ["/og.png"],
   },
   robots: {
